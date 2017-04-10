@@ -51,24 +51,34 @@ func removePlaceholdersFromFiles(projectName string) {
     fmt.Println(err)
     os.Exit(1)
   }
+  // rename directories first
+  filepath.Walk(dir, func(path string, fileInfo os.FileInfo, err error) (e error) {
+    return renameFilesAndDirectories(path, projectName, fileInfo, err)
+  })
+
   filepath.Walk(dir, func(path string, fileInfo os.FileInfo, err error) (e error) {
     return removePlaceholders(path, projectName, fileInfo, err)
   })
 }
 
-// Remove placeholders from file names and file content
-func removePlaceholders(path string, projectName string, fileInfo os.FileInfo, err error) (e error) {
+// Rename files and directories containing the placeholder value
+func renameFilesAndDirectories(path string, projectName string, fileInfo os.FileInfo, err error) (e error) {
   dir := filepath.Dir(path)
-  // Search and replace the placeholder text in files
-  if (!fileInfo.IsDir()) {
-    searchFileAndReplace(filepath.Join(dir, fileInfo.Name()), fileInfo.Mode(), "myproject", projectName)
-  }
-
   // Rename files and directories
   if strings.HasPrefix(fileInfo.Name(), "myproject") {
     base := filepath.Base(path)
     newFileName := filepath.Join(dir, strings.Replace(base, "myproject", projectName, 1))
     os.Rename(path, newFileName)
+  }
+  return
+}
+
+// Remove placeholders from the file's content
+func removePlaceholders(path string, projectName string, fileInfo os.FileInfo, err error) (e error) {
+  dir := filepath.Dir(path)
+  // Search and replace the placeholder text in files
+  if (!fileInfo.IsDir()) {
+    searchFileAndReplace(filepath.Join(dir, fileInfo.Name()), fileInfo.Mode(), "myproject", projectName)
   }
   return
 }
@@ -94,22 +104,17 @@ func firstCommit() {
   runCommandOrFail("git", []string{"commit", "-m", "Project initialized with stream-utils"}, false)
 }
 
-// Print the welcome messgae
+// Print the welcome message
 func printWelcome(projectName string) {
-  welcome := `
-    Project created in ./` + projectName + `
+  bytes, err := ioutil.ReadFile("welcome.txt") // just pass the file name
+  if err != nil {
+    fmt.Println("Could not print welcome message :(")
+  }
 
-    Things to try once you've started your dev Kafka cluster (broker address defaults to 172.16.21.150:9092)
+  // Print the contents of the welcome file
+  welcome := string(bytes)
+  fmt.Println(welcome)
 
-    $  make run
-    $  make test_producer
-    $  make unit_tests
-    $  make package
-    $  make image_name
-    $  make image
-
-  `
-  fmt.Printf(welcome, projectName)
 }
 
 // Create a new CLI app
