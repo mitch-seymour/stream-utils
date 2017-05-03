@@ -27,7 +27,7 @@ func runCommandOrFail(cmd string, args []string, printOutput bool) {
 // Clone the Kafka Streams skeleton project
 func cloneSkeletonRepo(intoDir string) {
   cmd := "git"
-  repoUrl := ""
+  repoUrl := "git@github.com:mitch-seymour/kafka-streams-skeleton.git"
   args := []string{"clone", repoUrl, intoDir}
   runCommandOrFail(cmd, args, false)
   os.Chdir(intoDir)
